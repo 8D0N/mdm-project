@@ -4,3 +4,6 @@ pydantic
 pytest
 httpx
 pytest-asyncio
+sqlalchemy
+psycopg2-binary  # PostgreSQL用
+jinja2
