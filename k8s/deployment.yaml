@@ -1,0 +1,40 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: mdm-server
+  labels:
+    app: mdm-server
+spec:
+  replicas: 2 # 冗長化のために2台構成
+  selector:
+    matchLabels:
+      app: mdm-server
+  template:
+    metadata:
+      labels:
+        app: mdm-server
+    spec:
+      containers:
+      - name: mdm-server
+        image: nrt.ocir.io/nrw7kpssiqsh/mdm-server/mdm-server:v1
+        ports:
+        - containerPort: 8000
+        resources:
+          limits:
+            cpu: "500m"
+            memory: "512Mi"
+          requests:
+            cpu: "200m"
+            memory: "256Mi"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: mdm-server-lb
+spec:
+  type: LoadBalancer # OCIのロードバランサーが自動生成されます
+  ports:
+  - port: 80 # 外からの受付ポート
+    targetPort: 8000 # コンテナのポート
+  selector:
+    app: mdm-server
