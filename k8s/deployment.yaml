@@ -14,9 +14,11 @@ spec:
       labels:
         app: mdm-server
     spec:
+      imagePullSecrets:
+      - name: ocir-auth # Kubernetes に作成する Secret 名（後述）
       containers:
       - name: mdm-server
-        image: <YOUR_REGISTRY>/<your-namespace>/mdm-server:latest
+        image: nrt.ocir.io/nrw7kpssiqsh/mdm-server/mdm-server:1.1 # 例: iad.ocir.io/tenancy-namespace/myrepo/mdm-server:1.0
         ports:
         - containerPort: 8000
         resources:
