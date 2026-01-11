@@ -1,14 +1,21 @@
 from fastapi import FastAPI, Depends, Request
+from fastapi.templating import Jinja2Templates
+from fastapi.responses import HTMLResponse
 from sqlalchemy.orm import Session, sessionmaker
 from .models.device import Device, engine, Base
 from .schemas.inventory import InventoryReport, DeviceDirective
+from .services.mdm_logic import calculate_directive
 import datetime
+import os
 
 # テーブル作成
 Base.metadata.create_all(bind=engine)
 
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 app = FastAPI()
+
+# テンプレート設定 (`templetes` フォルダを使用)
+templates = Jinja2Templates(directory=os.path.join(os.path.dirname(__file__), "templetes"))
 
 # DBセッションの依存注入
 def get_db():
@@ -17,6 +24,18 @@ def get_db():
         yield db
     finally:
         db.close()
+
+
+@app.get("/health")
+def health():
+    return {"status": "ok"}
+
+
+@app.get("/", response_class=HTMLResponse)
+def dashboard(request: Request, db: Session = Depends(get_db)):
+    devices = db.query(Device).all()
+    return templates.TemplateResponse("index.html", {"request": request, "devices": devices})
+
 
 @app.post("/v1/checkin", response_model=DeviceDirective)
 async def device_checkin(report: InventoryReport, db: Session = Depends(get_db)):
@@ -40,11 +59,9 @@ async def device_checkin(report: InventoryReport, db: Session = Depends(get_db))
         )
         db.add(db_device)
 
+    # 変更をコミット
     db.commit()
 
-    # 2. 宣言型命令の生成 (固定値を返す)
-    return {
-        "status": "managed",
-        "desired_config": {"usb_block": True},
-        "commands": []
-    }
+    # 2. 宣言型命令の生成（共通ロジックに委譲）
+    directive = calculate_directive(report)
+    return directive
