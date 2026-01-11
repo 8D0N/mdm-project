@@ -16,7 +16,7 @@ spec:
     spec:
       containers:
       - name: mdm-server
-        image: nrt.ocir.io/nrw7kpssiqsh/mdm-server/mdm-server:v1
+        image: <YOUR_REGISTRY>/<your-namespace>/mdm-server:latest
         ports:
         - containerPort: 8000
         resources:
@@ -26,6 +26,12 @@ spec:
           requests:
             cpu: "200m"
             memory: "256Mi"
+        env:
+        - name: DATABASE_URL
+          valueFrom:
+            secretKeyRef:
+              name: mdm-db-secret
+              key: DATABASE_URL
 ---
 apiVersion: v1
 kind: Service
